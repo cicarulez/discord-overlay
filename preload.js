@@ -29,5 +29,17 @@ contextBridge.exposeInMainWorld('appApi', {
     },
     onHelp(callback) {
         ipcRenderer.on('app:help', () => callback());
+    },
+    onSettings(callback) {
+        ipcRenderer.on('app:settings', () => callback());
+    }
+});
+
+contextBridge.exposeInMainWorld('settingsApi', {
+    async get() {
+        return await ipcRenderer.invoke('settings:get');
+    },
+    async save(payload) {
+        return await ipcRenderer.invoke('settings:save', payload);
     }
 });

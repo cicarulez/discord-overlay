@@ -105,11 +105,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (membersCollapsed) {
             membersList.classList.add('hidden');
             toggleBtn.textContent = '▸';
-            toggleBtn.title = 'Mostra lista membri';
+            toggleBtn.title = 'Show members list';
         } else {
             membersList.classList.remove('hidden');
             toggleBtn.textContent = '▾';
-            toggleBtn.title = 'Nascondi lista membri';
+            toggleBtn.title = 'Hide members list';
         }
     }
 
@@ -202,7 +202,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Chiudi help con ESC
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && isHelpOpen()) {
             e.preventDefault();

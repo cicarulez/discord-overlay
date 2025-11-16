@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Settings</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        body {
+            background: #1a1a1a;
+        }
+        .settings-window {
+            padding: 12px;
+            color: #fff;
+        }
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .settings-title {
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.95;
+        }
+        .settings-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .text-muted { opacity: 0.75; font-size: 12px; }
+    </style>
+    <script defer src="settings.js"></script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+</head>
+<body>
+<div class="settings-window">
+    <div class="settings-header">
+        <h3 class="settings-title">Settings</h3>
+        <div class="settings-actions">
+            <button id="settings-cancel-btn">Close</button>
+            <button id="settings-save-btn" class="primary">Save</button>
+        </div>
+    </div>
+
+    <form id="settings-form">
+        <div class="form-row">
+            <label for="botToken">Bot Token</label>
+            <input type="password" id="botToken" name="botToken" autocomplete="off" required />
+        </div>
+        <div class="form-row">
+            <label for="guildId">Guild ID</label>
+            <input type="text" id="guildId" name="guildId" required />
+        </div>
+        <div class="form-row">
+            <label for="voiceChannelId">Voice Channel ID</label>
+            <input type="text" id="voiceChannelId" name="voiceChannelId" required />
+        </div>
+        <div class="form-row two-cols">
+            <div>
+                <label for="trackedMode">Tracked Mode</label>
+                <select id="trackedMode" name="trackedMode">
+                    <option value="id">ID</option>
+                    <option value="name">Name</option>
+                </select>
+            </div>
+            <div>
+                <label for="trackedValue">Tracked Value</label>
+                <input type="text" id="trackedValue" name="trackedValue" />
+            </div>
+        </div>
+
+        <div id="settings-error" class="form-error" aria-live="polite"></div>
+
+        <div class="text-muted">Tip: on first launch you will be asked to fill these settings. They will be saved locally.</div>
+    </form>
+</div>
+</body>
+</html>
