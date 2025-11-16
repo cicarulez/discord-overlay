@@ -6,7 +6,13 @@
   "productName": "Discord Overlay",
   "description": "Electron-based desktop overlay that displays real-time participants and mute status of a Discord voice channel.",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dev": "electronmon .",
+    "pack": "electron-builder --dir",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
   },
   "keywords": [
     "electron",
@@ -19,7 +25,47 @@
     "discord.js": "^14.16.0"
   },
   "devDependencies": {
-    "electron": "^31.0.0"
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "electronmon": "^2.0.0"
+  },
+  "build": {
+    "appId": "com.example.discordoverlay",
+    "productName": "Discord Overlay",
+    "asar": true,
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "config.json",
+        "to": "config.json"
+      }
+    ],
+    "directories": {
+      "buildResources": "build"
+    },
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": ["dmg"],
+      "hardenedRuntime": false
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Utility"
+    }
   },
   "author": "",
   "license": "MIT"
