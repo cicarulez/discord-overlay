@@ -2,12 +2,29 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('voiceApi', {
     onUpdate(callback) {
-        // callback receives { members: [...], tracked: {...} }
         ipcRenderer.on('voice:update', (_event, data) => {
             callback(data);
         });
     },
     async getCurrent() {
         return await ipcRenderer.invoke('voice:getCurrent');
+    }
+});
+
+contextBridge.exposeInMainWorld('appApi', {
+    close() {
+        ipcRenderer.send('app:close');
+    },
+    setMinimized(state) {
+        ipcRenderer.send('app:setMinimized', state);
+    },
+    onMinimized(callback) {
+        ipcRenderer.on('app:minimized', (_event, state) => callback(state));
+    },
+    openSettings() {
+        ipcRenderer.send('app:openSettings');
+    },
+    openHelp() {
+        ipcRenderer.send('app:openHelp');
     }
 });

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { Client, GatewayIntentBits } = require('discord.js');
@@ -13,13 +13,23 @@ let voiceStateCache = {
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 
 function createWindow() {
+    const display = screen.getPrimaryDisplay();
+    const { width: screenWidth } = display.workAreaSize;
+
+    const winWidth = 260;
+    const winHeight = 200;
+    const margin = 20;
+
     mainWindow = new BrowserWindow({
-        width: 260,
-        height: 200,
+        width: winWidth,
+        height: winHeight,
+        x: screenWidth - winWidth - margin, // top-right
+        y: margin,
         alwaysOnTop: true,
         frame: false,
         transparent: true,
         resizable: false,
+        skipTaskbar: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -28,7 +38,7 @@ function createWindow() {
     });
 
     mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-
+    setupIpc();
 }
 
 function sendVoiceUpdate() {
@@ -64,7 +74,6 @@ async function initDiscord() {
 
     discordClient.on('voiceStateUpdate', (oldState, newState) => {
         const channelId = config.voiceChannelId;
-
         const oldInChannel = oldState.channelId === channelId;
         const newInChannel = newState.channelId === channelId;
 
@@ -103,7 +112,6 @@ async function initDiscord() {
 }
 
 function updateTrackedFromMembers() {
-    // Find tracked member based on config
     let tracked = null;
 
     if (config.trackedMember.mode === 'id') {
@@ -123,6 +131,10 @@ ipcMain.handle('voice:getCurrent', () => {
     return voiceStateCache;
 });
 
+ipcMain.on('app:close', () => {
+    app.quit();
+});
+
 app.whenReady().then(async () => {
     createWindow();
     await initDiscord();
@@ -135,3 +147,63 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
+
+let isMinimized = false;
+let normalBounds = { width: 260, height: 200 };
+
+function setWindowMinimized(state) {
+    if (!mainWindow) return;
+    const display = screen.getPrimaryDisplay();
+    const { width: screenWidth } = display.workAreaSize;
+    const margin = 20;
+
+    if (state) {
+        // salva dimensioni normali
+        const b = mainWindow.getBounds();
+        normalBounds = { width: b.width, height: b.height };
+        const miniW = 32;
+        const miniH = 32;
+        mainWindow.setBounds({
+            width: miniW,
+            height: miniH,
+            x: screenWidth - miniW - margin,
+            y: margin
+        }, false);
+    } else {
+        const w = normalBounds.width || 260;
+        const h = normalBounds.height || 200;
+        mainWindow.setBounds({
+            width: w,
+            height: h,
+            x: screenWidth - w - margin,
+            y: margin
+        }, false);
+    }
+    isMinimized = state;
+    // informa il renderer
+    mainWindow.webContents.send('app:minimized', isMinimized);
+}
+
+function setupIpc() {
+    ipcMain.on('app:setMinimized', (_evt, state) => {
+        setWindowMinimized(!!state);
+    });
+
+    ipcMain.on('app:openSettings', async () => {
+        await dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            message: 'Settings',
+            detail: 'Settings section not yet implemented.',
+            buttons: ['OK']
+        });
+    });
+
+    ipcMain.on('app:openHelp', async () => {
+        await dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            message: 'Help',
+            detail: 'Help section not yet implemented.',
+            buttons: ['OK']
+        });
+    });
+}

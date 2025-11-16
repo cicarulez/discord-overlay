@@ -1,19 +1,33 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
     <title>Discord Overlay</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <div id="overlay">
+    <button id="restore-btn" class="icon-btn" title="Restore (Ctrl+M)" aria-label="Restore">◻</button>
+    <div id="titlebar">
+        <span id="title-text">Voice Overlay</span>
+        <div id="title-actions">
+            <button id="help-btn" class="icon-btn" title="Help (F1)">?</button>
+            <button id="settings-btn" class="icon-btn" title="Settings (Ctrl+,)">⚙</button>
+            <button id="minimize-btn" class="icon-btn" title="Minimize (Ctrl+M)">—</button>
+            <button id="close-btn" class="icon-btn" title="Close (Ctrl+W)">✕</button>
+        </div>
+    </div>
+
     <div id="tracked-container">
         <div id="tracked-icon" class="status-icon muted"></div>
         <span id="tracked-name">No tracked user</span>
     </div>
 
     <div id="members-container">
-        <h4>Channel members</h4>
+        <div id="members-header">
+            <h4 id="members-title">Channel members</h4>
+            <button id="toggle-members-btn" title="Show/Hide list">▾</button>
+        </div>
         <ul id="members-list"></ul>
     </div>
 </div>

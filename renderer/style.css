@@ -1,5 +1,3 @@
-/* Simple transparent overlay style */
-
 body {
     margin: 0;
     padding: 0;
@@ -8,23 +6,108 @@ body {
     color: white;
 }
 
+/* Disabilita la selezione del testo in tutto l'overlay */
+html, body, #overlay {
+    -webkit-user-select: none; /* Chrome/Electron */
+    -ms-user-select: none;      /* vecchio Edge/IE */
+    user-select: none;
+}
+
+/* Utility: rendi selezionabile dove serve esplicitamente */
+.selectable {
+    -webkit-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+}
+
 #overlay {
     padding: 8px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.5);
+    position: relative; /* necessario per posizionare il tasto ripristina */
+}
+
+#titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    -webkit-app-region: drag; /* window drag region */
+}
+
+#title-actions {
+    display: flex;
+    gap: 4px;
+    -webkit-app-region: no-drag;
+}
+
+.icon-btn {
+    -webkit-app-region: no-drag;
+    border: none;
+    background: transparent;
+    color: #ffffffaa;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.icon-btn:hover {
+    color: #ffffff;
+}
+
+/* Tasto ripristina: nascosto di default, visibile e posizionato in modalità minimizzata */
+#restore-btn {
+    display: none;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+    padding: 0;
+    opacity: 0.8;
+}
+
+#restore-btn:hover {
+    opacity: 1;
+}
+
+#title-text {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+#close-btn {
+    -webkit-app-region: no-drag;
+    border: none;
+    background: transparent;
+    color: #ffffffaa;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+#close-btn:hover {
+    color: #ff6666;
 }
 
 #tracked-container {
     display: flex;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .status-icon {
     width: 16px;
     height: 16px;
+    aspect-ratio: 1 / 1; /* mantiene il cerchio perfetto anche sotto compressione */
     border-radius: 50%;
     margin-right: 8px;
+    flex: 0 0 16px; /* evita lo shrink che ovalizza il cerchio */
+    box-sizing: border-box;
 }
 
 .status-icon.muted {
@@ -39,10 +122,34 @@ body {
     font-size: 12px;
 }
 
+#members-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#toggle-members-btn {
+    -webkit-app-region: no-drag;
+    border: none;
+    background: transparent;
+    color: #ffffffaa;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+#toggle-members-btn:hover {
+    color: #ccccff;
+}
+
 #members-list {
     list-style: none;
     margin: 0;
     padding: 0;
+}
+
+.hidden {
+    display: none !important;
 }
 
 .member-item {
@@ -65,4 +172,36 @@ body {
 
 .member-dot.unmuted {
     background: lime;
+}
+
+/* Minimizzato: mostra solo il semaforino del tracked */
+#overlay.minimized {
+    padding: 4px;
+}
+
+#overlay.minimized #titlebar {
+    display: none;
+}
+
+#overlay.minimized #members-container {
+    display: none;
+}
+
+#overlay.minimized #tracked-name {
+    display: none;
+}
+
+#overlay.minimized #tracked-container {
+    margin: 0;
+    justify-content: center;
+}
+
+/* Mostra il tasto ripristina quando minimizzato */
+#overlay.minimized #restore-btn {
+    display: inline-block;
+}
+
+/* In minimizzato togli il margine del semaforino per centrarlo meglio e prevenire schiacciamenti */
+#overlay.minimized .status-icon {
+    margin-right: 0;
 }
