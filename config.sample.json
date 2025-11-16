@@ -1,0 +1,9 @@
+{
+  "botToken": "INSERISCI_QUI_IL_TOKEN_DEL_BOT",
+  "guildId": "123456789012345678",
+  "voiceChannelId": "234567890123456789",
+  "trackedMember": {
+    "mode": "id",
+    "value": "345678901234567890"
+  }
+}

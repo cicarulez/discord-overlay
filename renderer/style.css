@@ -1,0 +1,68 @@
+/* Simple transparent overlay style */
+
+body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    font-family: system-ui, sans-serif;
+    color: white;
+}
+
+#overlay {
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#tracked-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.status-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-icon.muted {
+    background: red;
+}
+
+.status-icon.unmuted {
+    background: lime;
+}
+
+#members-container {
+    font-size: 12px;
+}
+
+#members-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.member-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    background: gray;
+}
+
+.member-dot.muted {
+    background: red;
+}
+
+.member-dot.unmuted {
+    background: lime;
+}
