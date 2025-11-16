@@ -26,5 +26,8 @@ contextBridge.exposeInMainWorld('appApi', {
     },
     openHelp() {
         ipcRenderer.send('app:openHelp');
+    },
+    onHelp(callback) {
+        ipcRenderer.on('app:help', () => callback());
     }
 });

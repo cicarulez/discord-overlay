@@ -199,11 +199,9 @@ function setupIpc() {
     });
 
     ipcMain.on('app:openHelp', async () => {
-        await dialog.showMessageBox(mainWindow, {
-            type: 'info',
-            message: 'Help',
-            detail: 'Help section not yet implemented.',
-            buttons: ['OK']
-        });
+        // Invia un evento al renderer per aprire il pannello Help
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('app:help');
+        }
     });
 }

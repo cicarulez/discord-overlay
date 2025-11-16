@@ -126,6 +126,37 @@ window.addEventListener('DOMContentLoaded', async () => {
     settingsBtn.addEventListener('click', () => window.appApi.openSettings());
     helpBtn.addEventListener('click', () => window.appApi.openHelp());
 
+    // Help modal elements
+    const helpModal = document.getElementById('help-modal');
+    const helpBackdrop = document.getElementById('help-backdrop');
+    const helpCloseBtn = document.getElementById('help-close-btn');
+
+    function isHelpOpen() {
+        return helpModal && !helpModal.hasAttribute('hidden');
+    }
+
+    function openHelp() {
+        if (!helpModal || !helpBackdrop) return;
+        helpModal.removeAttribute('hidden');
+        helpBackdrop.removeAttribute('hidden');
+        // porta il focus al pulsante chiudi per accessibilità
+        if (helpCloseBtn) helpCloseBtn.focus();
+    }
+
+    function closeHelp() {
+        if (!helpModal || !helpBackdrop) return;
+        helpModal.setAttribute('hidden', '');
+        helpBackdrop.setAttribute('hidden', '');
+    }
+
+    if (helpCloseBtn) helpCloseBtn.addEventListener('click', closeHelp);
+    if (helpBackdrop) helpBackdrop.addEventListener('click', closeHelp);
+
+    // Apri help quando il main invia l'evento
+    if (window.appApi && window.appApi.onHelp) {
+        window.appApi.onHelp(() => openHelp());
+    }
+
     window.appApi.onMinimized((state) => {
         isMinimized = !!state;
         applyMinimizeUI();
@@ -149,7 +180,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
         if (!e.ctrlKey && !e.shiftKey && !e.altKey && e.key === 'F1') {
             e.preventDefault();
-            window.appApi.openHelp();
+            if (isHelpOpen()) {
+                closeHelp();
+            } else {
+                window.appApi.openHelp();
+            }
             return;
         }
 
@@ -164,6 +199,14 @@ window.addEventListener('DOMContentLoaded', async () => {
             membersCollapsed = !membersCollapsed;
             updateToggleUI();
             return;
+        }
+    });
+
+    // Chiudi help con ESC
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isHelpOpen()) {
+            e.preventDefault();
+            closeHelp();
         }
     });
 });

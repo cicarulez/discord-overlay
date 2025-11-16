@@ -32,6 +32,44 @@
     </div>
 </div>
 
+<div id="help-backdrop" class="help-backdrop" hidden></div>
+<div id="help-modal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+    <div class="help-header">
+        <h3 id="help-title">Help & Shortcuts</h3>
+        <button id="help-close-btn" class="icon-btn" title="Close (Esc)" aria-label="Close">✕</button>
+    </div>
+    <div class="help-content selectable">
+        <p class="help-intro">Here are all the shortcuts available in the overlay. Use these combinations to move
+            quickly without the mouse.</p>
+
+        <ul class="shortcut-list">
+            <li>
+                <span class="keys"><kbd>F1</kbd></span>
+                <span class="desc">Open this help panel.</span>
+            </li>
+            <li>
+                <span class="keys"><kbd>Ctrl</kbd> + <kbd>M</kbd></span>
+                <span class="desc">Minimize/Restore the overlay.</span>
+            </li>
+            <li>
+                <span class="keys"><kbd>Ctrl</kbd> + <kbd>,</kbd></span>
+                <span class="desc">Open settings.</span>
+            </li>
+            <li>
+                <span class="keys"><kbd>Ctrl</kbd> + <kbd>W</kbd></span>
+                <span class="desc">Close application.</span>
+            </li>
+            <li>
+                <span class="keys"><kbd>Ctrl</kbd> + <kbd>L</kbd></span>
+                <span class="desc">Show/Hide channel members list.</span>
+            </li>
+        </ul>
+
+        <p class="help-tip">Tip: when the overlay is minimized, you can click the icon in the top right to restore
+            it.</p>
+    </div>
+</div>
+
 <script src="renderer.js"></script>
 </body>
 </html>
