@@ -1,0 +1,42 @@
+name: Bug report
+description: Report a reproducible bug
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please fill out the form below.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Which version/commit are you using?
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: What happened and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs/Stack traces
+      render: shell
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options: [Linux, macOS, Windows, Other]

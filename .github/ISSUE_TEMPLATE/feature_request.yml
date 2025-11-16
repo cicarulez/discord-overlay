@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose a new idea or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this solve?
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the desired behavior or UI/API
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Describe any alternative solutions considered
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
