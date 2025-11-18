@@ -8,6 +8,11 @@ Features
 - Shows speaking and muted status at a glance
 - Lightweight Electron app that can stay on top of other windows
 
+Windows fullscreen note
+On Windows, the overlay can be shown over games only when the game runs in Windowed or Borderless Fullscreen (windowed borderless) mode.
+
+When a game uses Exclusive Fullscreen, it bypasses the Desktop Window Manager (DWM) and renders directly via the GPU. In this mode, regular OS windows (including Electron overlays) cannot be drawn on top. This is a Windows technical limitation, not an app bug.
+
 Requirements
 - Node.js 18 LTS or newer
 - A Discord Bot token with the required gateway intents enabled
@@ -38,6 +43,7 @@ Troubleshooting
 - If the overlay shows no users, verify the bot is in the server and has the necessary permissions and intents.
 - Ensure the guildId and voiceChannelId are correct and the bot can access that channel.
 - Check the console output where you started npm start for errors.
+ - If the overlay is not visible over your game on Windows, switch the game to Windowed or Borderless Fullscreen. Exclusive Fullscreen prevents Electron windows from appearing on top.
 
 Roadmap
 - Toggleable always-on-top behavior

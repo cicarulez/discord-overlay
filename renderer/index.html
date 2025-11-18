@@ -67,6 +67,19 @@
 
         <p class="help-tip">Tip: when the overlay is minimized, you can click the icon in the top right to restore
             it.</p>
+
+        <hr />
+        <div class="help-section">
+            <h4>Windows fullscreen note</h4>
+            <p>On Windows, the overlay can be shown over games only when the game runs in the following modes:</p>
+            <ul>
+                <li>Windowed</li>
+                <li>Borderless Fullscreen (windowed borderless)</li>
+            </ul>
+            <p>When a game uses <em>Exclusive Fullscreen</em>, it bypasses the Desktop Window Manager (DWM)
+                and renders directly via the GPU. In this mode, regular OS windows (including Electron overlays)
+                cannot be drawn on top. This is a Windows technical limitation, not an app bug.</p>
+        </div>
     </div>
 </div>
 
