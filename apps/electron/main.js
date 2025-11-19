@@ -24,15 +24,32 @@ function ensureDirExists(filePath) {
 
 function getDefaultSettings() {
     return {
+        // Modalità server Discord locale (default)
         botToken: '',
         guildId: '',
         voiceChannelId: '',
-        trackedMember: { mode: 'id', value: '' }
+        trackedMember: { mode: 'id', value: '' },
+        // Modalità solo client: usa un backend esterno e non avvia discord.js localmente
+        clientOnly: false,
+        backendBaseUrl: 'http://localhost:5090'
     };
 }
 
 function validateSettings(s) {
     if (!s) return { ok: false, error: 'Missing settings' };
+    // Se in modalità client-only, serve solo un URL backend valido
+    if (s.clientOnly) {
+        try {
+            const u = new URL(s.backendBaseUrl);
+            if (!['http:', 'https:'].includes(u.protocol)) {
+                return { ok: false, error: 'backendBaseUrl must be http or https' };
+            }
+        } catch {
+            return { ok: false, error: 'Invalid backendBaseUrl' };
+        }
+        return { ok: true };
+    }
+    // Altrimenti si richiedono le credenziali Discord locali
     const required = ['botToken', 'guildId', 'voiceChannelId'];
     for (const k of required) {
         if (typeof s[k] !== 'string' || s[k].trim() === '') {
@@ -56,8 +73,8 @@ function loadSettings() {
             settings = { ...getDefaultSettings(), ...parsed };
             return settings;
         }
-        // First run: try migrate from legacy config.json if present
-        const legacyPath = path.join(__dirname, 'config.json');
+        // First run: try migrate from legacy config.json if present (project root)
+        const legacyPath = path.resolve(__dirname, '../../config.json');
         if (fs.existsSync(legacyPath)) {
             const legacy = JSON.parse(fs.readFileSync(legacyPath, 'utf8'));
             settings = { ...getDefaultSettings(), ...legacy };
@@ -152,6 +169,11 @@ async function initDiscord() {
     if (!valid.ok) {
         // defer initialization until settings are valid
         console.log('Invalid settings. Waiting for user configuration.');
+        return;
+    }
+    // Se in modalità solo client, non inizializzare Discord
+    if (settings.clientOnly) {
+        console.log('Client-only mode: skipping local Discord client initialization.');
         return;
     }
     discordClient = new Client({
@@ -340,6 +362,11 @@ function setupIpc() {
         }
         await initDiscord();
 
+        // Notifica il renderer che le impostazioni sono cambiate
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('app:settings-updated', merged);
+        }
+
         // Close settings window on successful save (optional UX)
         try {
             if (settingsWindow && !settingsWindow.isDestroyed()) {
@@ -347,5 +374,50 @@ function setupIpc() {
             }
         } catch (_) { /* noop */ }
         return { ok: true };
+    });
+
+    // Aggiorna solo la preferenza di trackedMember (selezionato lato client)
+    ipcMain.handle('settings:setTracked', async (_evt, pref) => {
+        try {
+            const next = { ...settings, trackedMember: pref };
+            saveSettings(next);
+            // Propaga immediatamente il cambiamento
+            if (settings.clientOnly) {
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('app:settings-updated', next);
+                }
+            } else {
+                // Ricalcola tracked in base ai membri correnti del canale
+                updateTrackedFromMembers();
+                sendVoiceUpdate();
+            }
+            return { ok: true };
+        } catch (e) {
+            return { ok: false, error: (e && e.message) || 'Failed to set tracked' };
+        }
+    });
+
+    ipcMain.handle('settings:clearTracked', async () => {
+        try {
+            const cleared = {
+                ...settings,
+                trackedMember: {
+                    mode: settings.trackedMember?.mode === 'name' ? 'name' : 'id',
+                    value: ''
+                }
+            };
+            saveSettings(cleared);
+            if (settings.clientOnly) {
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('app:settings-updated', cleared);
+                }
+            } else {
+                updateTrackedFromMembers();
+                sendVoiceUpdate();
+            }
+            return { ok: true };
+        } catch (e) {
+            return { ok: false, error: (e && e.message) || 'Failed to clear tracked' };
+        }
     });
 }

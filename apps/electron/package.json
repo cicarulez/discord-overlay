@@ -1,5 +1,5 @@
 {
-  "name": "discord-overlay",
+  "name": "discord-overlay-electron",
   "version": "1.0.0",
   "private": true,
   "main": "main.js",
@@ -41,7 +41,7 @@
     ],
     "extraResources": [
       {
-        "from": "config.json",
+        "from": "../../config.json",
         "to": "config.json"
       }
     ],

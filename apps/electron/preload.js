@@ -32,6 +32,9 @@ contextBridge.exposeInMainWorld('appApi', {
     },
     onSettings(callback) {
         ipcRenderer.on('app:settings', () => callback());
+    },
+    onSettingsUpdated(callback) {
+        ipcRenderer.on('app:settings-updated', (_e, payload) => callback(payload));
     }
 });
 
@@ -41,5 +44,11 @@ contextBridge.exposeInMainWorld('settingsApi', {
     },
     async save(payload) {
         return await ipcRenderer.invoke('settings:save', payload);
+    },
+    async setTracked(pref) {
+        return await ipcRenderer.invoke('settings:setTracked', pref);
+    },
+    async clearTracked() {
+        return await ipcRenderer.invoke('settings:clearTracked');
     }
 });

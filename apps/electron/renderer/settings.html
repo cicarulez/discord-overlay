@@ -43,6 +43,17 @@
     </div>
 
     <form id="settings-form">
+        <fieldset class="form-row">
+            <label for="clientOnly">
+                <input type="checkbox" id="clientOnly" name="clientOnly" />
+                Use as client only (connect to external backend)
+            </label>
+        </fieldset>
+        <div class="form-row" id="row-backend-url">
+            <label for="backendBaseUrl">Backend Base URL</label>
+            <input type="text" id="backendBaseUrl" name="backendBaseUrl" placeholder="http://localhost:5090" />
+        </div>
+
         <div class="form-row">
             <label for="botToken">Bot Token</label>
             <input type="password" id="botToken" name="botToken" autocomplete="off" required />
@@ -71,7 +82,7 @@
 
         <div id="settings-error" class="form-error" aria-live="polite"></div>
 
-        <div class="text-muted">Tip: on first launch you will be asked to fill these settings. They will be saved locally.</div>
+        <div class="text-muted">Tip: enable client-only to connect this overlay to an external backend (HTTP/WS). Otherwise, configure Discord credentials to run locally.</div>
     </form>
 </div>
 </body>
