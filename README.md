@@ -1,66 +1,69 @@
-Discord Overlay
-===============
+Discord Overlay — Monorepo
+==========================
 
-Electron-based desktop overlay that displays real-time participants and mute status of a Discord voice channel.
+Overview
+This repository contains multiple projects that work together to display, as a desktop/web overlay, the participants of a Discord voice channel and their status (mute/deaf) in real time.
 
-Features
-- Real-time roster of users in a target Discord voice channel
-- Shows speaking and muted status at a glance
-- Lightweight Electron app that can stay on top of other windows
+Supported runtime models:
+- Standalone: the Electron app connects directly to Discord (requires a local bot token).
+- Client + Backend: a local/remote backend service exposes data via HTTP/WS, and the clients (Electron in client‑only mode or the Angular app) connect to the backend without running a bot locally.
 
-Windows fullscreen note
-On Windows, the overlay can be shown over games only when the game runs in Windowed or Borderless Fullscreen (windowed borderless) mode.
+Projects
+- apps/electron: Electron desktop client. Can run in Standalone or Client‑Only mode by connecting to the backend.
+- apps/angular: Angular web client that connects to the backend.
+- services/discord-service: Backend service that connects to Discord and publishes the voice channel state via HTTP and WebSocket.
 
-When a game uses Exclusive Fullscreen, it bypasses the Desktop Window Manager (DWM) and renders directly via the GPU. In this mode, regular OS windows (including Electron overlays) cannot be drawn on top. This is a Windows technical limitation, not an app bug.
+Language
+- Default repository language for documentation, issues, PRs, and commit messages is English.
+- Optional localized docs can live alongside as README.<lang>.md files (e.g., README.it.md) and should be linked from the English README.
 
 Requirements
 - Node.js 18 LTS or newer
-- A Discord Bot token with the required gateway intents enabled
+- For Standalone or the backend: a Discord Bot token with the required gateway intents enabled
 - Windows, macOS, or Linux
 
-Getting started
-1) Install dependencies:
-   npm install
+Quick start scenarios
+1) Electron Standalone (no backend)
+   - cd apps/electron
+   - npm install
+   - Start the app and open Settings to enter botToken, guildId, voiceChannelId (see the Electron README for details on settings.json)
+   - npm start
 
-2) Configure the app. Copy config.sample.json to config.json and fill in your details:
-   Copy-Item config.sample.json config.json  (PowerShell)
-   or
-   cp config.sample.json config.json  (bash)
+2) Backend + Electron (client‑only)
+   - Start the backend:
+     - cd services/discord-service
+     - npm install
+     - Copy .env.sample to .env and set DISCORD_BOT_TOKEN, optionally VOICE_CHANNEL_ID
+     - npm start (defaults to http://127.0.0.1:5090)
+   - Start Electron in client‑only mode:
+     - cd apps/electron
+     - npm install
+     - In Settings enable clientOnly=true and set backendBaseUrl (e.g., http://localhost:5090)
+     - npm start
 
-   Then edit config.json:
-   - botToken: your Discord bot token
-   - guildId: the server (guild) ID
-   - voiceChannelId: the target voice channel ID to track
-   - trackedMember: optional filter; by default it uses mode "id" and a user value
+3) Backend + Angular (web)
+   - Start the backend as above
+   - cd apps/angular
+   - npm install
+   - ng serve
+   - Open http://localhost:4200 and configure the backend endpoint from the UI or as per the Angular README
 
-3) Start the app:
-   npm start
+Windows note (fullscreen)
+On Windows, the overlay can appear above games only when they run in Windowed or Borderless Fullscreen mode. In Exclusive Fullscreen, the DWM is bypassed and regular windows (like Electron) cannot be drawn on top. This is a Windows limitation, not an app bug.
 
-Configuration
-Config is loaded from config.json in the project root. See config.sample.json for an example.
-
-Troubleshooting
-- If the overlay shows no users, verify the bot is in the server and has the necessary permissions and intents.
-- Ensure the guildId and voiceChannelId are correct and the bot can access that channel.
-- Check the console output where you started npm start for errors.
- - If the overlay is not visible over your game on Windows, switch the game to Windowed or Borderless Fullscreen. Exclusive Fullscreen prevents Electron windows from appearing on top.
-
-Roadmap
-- Toggleable always-on-top behavior
-- Theme customization
-- Packaging for distribution (electron-builder)
-
-Contributing
-Contributions are welcome. Please read CONTRIBUTING.md for guidelines.
+Project documentation
+- See apps/electron/README.md for details on Standalone vs Client‑Only, configuration, and build.
+- See apps/angular/README.md for web client configuration and backend connection.
+- See services/discord-service/README.md for backend setup and usage.
 
 Security
 Please report vulnerabilities as described in SECURITY.md.
 
-Support
-See SUPPORT.md for how to get help and where to ask questions.
+Contributing
+Contributions are welcome. See CONTRIBUTING.md for guidelines.
 
 License
-This project is licensed under the MIT License. See LICENSE for details.
+MIT (see LICENSE).
 
 Acknowledgments
-- Built with Electron and discord.js
+- Built with Electron, Angular and discord.js

@@ -1,5 +1,5 @@
 ## Summary
-<!-- What does this PR change? -->
+<!-- Please write in English. What does this PR change? -->
 
 ## Related issues
 Closes #
@@ -13,6 +13,7 @@ Closes #
 - [ ] chore
 
 ## Checklist
+- [ ] Title, description, and code comments are in English
 - [ ] App runs locally without errors (npm start)
 - [ ] Docs updated (README/CHANGELOG)
 - [ ] Follows Conventional Commits
