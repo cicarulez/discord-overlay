@@ -1,0 +1,242 @@
+:host {
+  color: #fff;
+  font-family: system-ui, sans-serif
+}
+
+#overlay {
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, .5);
+  position: relative;
+  max-width: 360px;
+  margin: 8px
+}
+
+#overlay.minimized #members-container, #overlay.minimized #tracked-container, #overlay.minimized #titlebar #title-text, #overlay.minimized #titlebar #help-btn, #overlay.minimized #titlebar #settings-btn {
+  display: none
+}
+
+#overlay.minimized #restore-btn {
+  display: block
+}
+
+#titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px
+}
+
+#title-actions {
+  display: flex;
+  gap: 4px
+}
+
+.icon-btn {
+  border: none;
+  background: transparent;
+  color: #ffffffaa;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1
+}
+
+.icon-btn:hover {
+  color: #fff
+}
+
+#restore-btn {
+  display: none;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  padding: 0;
+  opacity: .8
+}
+
+#restore-btn:hover {
+  opacity: 1
+}
+
+#title-text {
+  font-size: 11px;
+  opacity: .8
+}
+
+#tracked-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px
+}
+
+.status-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+  flex: 0 0 16px;
+  box-sizing: border-box;
+  background: #888
+}
+
+.status-icon.active {
+  background: #3ddc84
+}
+
+.status-icon.muted {
+  background: #ff6666
+}
+
+#members-container {
+  background: rgba(255, 255, 255, .05);
+  border-radius: 6px;
+  padding: 4px
+}
+
+#members-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between
+}
+
+#members-title {
+  margin: 0;
+  font-size: 12px;
+  opacity: .9
+}
+
+#members-list {
+  list-style: none;
+  margin: 6px 0 0 0;
+  padding: 0;
+  max-height: 240px;
+  overflow: auto
+}
+
+#members-list li {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  padding: 2px 0;
+  cursor: pointer;
+  gap: 6px
+}
+
+.member-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3ddc84;
+  margin-right: 6px
+}
+
+.member-dot.muted {
+  background: #ff6666
+}
+
+.member-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.as-link {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #9ecbff;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.as-link:hover {
+  color: #cfe2ff;
+  text-decoration: underline;
+}
+
+.help-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .4)
+}
+
+.help-modal, .settings-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, 90vw);
+  background: #1f1f1f;
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .6)
+}
+
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #333
+}
+
+.help-content, .settings-content {
+  padding: 12px
+}
+
+.help-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid #333
+}
+
+.shortcut-list {
+  list-style: none;
+  margin: 0;
+  padding: 0
+}
+
+.shortcut-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed #333
+}
+
+.shortcut-list li:last-child {
+  border-bottom: none
+}
+
+.primary {
+  background: #3b82f6;
+  border: none;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer
+}
+
+.primary:hover {
+  background: #2563eb
+}
+
+.error {
+  color: #ff8080;
+  font-size: 12px;
+  margin-top: 6px
+}
+
+.hint {
+  color: #ccc;
+  font-size: 12px;
+  margin-top: 4px
+}

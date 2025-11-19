@@ -1,0 +1,97 @@
+<div id="overlay" [class.minimized]="minimized()">
+  <button id="restore-btn" class="icon-btn" title="Restore" *ngIf="minimized()" (click)="toggleMinimize()">◻</button>
+  <div id="titlebar">
+    <span id="title-text">Voice Overlay (Web)</span>
+    <div id="title-actions">
+      <button id="help-btn" class="icon-btn" title="Help" (click)="openHelp()">?</button>
+      <button id="settings-btn" class="icon-btn" title="Settings" (click)="openSettings()">⚙</button>
+      <button id="minimize-btn" class="icon-btn" title="Minimize/Restore" (click)="toggleMinimize()">—</button>
+    </div>
+  </div>
+
+  <!-- Connection styles and banners -->
+  <style>
+    .conn-banner{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;margin:6px 0;font-size:12px}
+    .conn-banner.error{background:rgba(255,102,102,.12);border:1px solid #ff666680;color:#ffb3b3}
+    .conn-banner.info{background:rgba(59,130,246,.12);border:1px solid #3b82f680;color:#cfe2ff}
+    .conn-actions{display:flex;align-items:center;gap:6px}
+    .conn-banner .link{background:transparent;border:none;color:inherit;text-decoration:underline;cursor:pointer;padding:0 2px}
+    .conn-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  </style>
+
+  <div
+    class="conn-banner error"
+    *ngIf="connectionStatus === 'disconnected' || httpFailed"
+    role="alert"
+    aria-live="assertive"
+  >
+    <span class="conn-text">Disconnected from backend ({{ config.httpBaseUrl() }}).</span>
+    <div class="conn-actions">
+      <button class="link" (click)="retryConnect()">Retry</button>
+      <span aria-hidden="true">·</span>
+      <button class="link" (click)="openSettings()">Settings</button>
+    </div>
+  </div>
+  <div
+    class="conn-banner info"
+    *ngIf="connectionStatus === 'connecting' && !httpFailed"
+    aria-live="polite"
+  >
+    <span class="conn-text">Connecting to backend ({{ config.httpBaseUrl() }})…</span>
+  </div>
+
+  <div id="tracked-container">
+    <div id="tracked-icon" class="status-icon" [class.muted]="tracked && (tracked.mute || tracked.deaf)" [class.active]="tracked && !tracked.mute && !tracked.deaf"></div>
+    <span id="tracked-name">{{ tracked?.name || 'No tracked user' }}</span>
+    <button *ngIf="tracked" class="as-link" title="Reset tracked" (click)="clearTracked()">Reset</button>
+  </div>
+
+  <div id="members-container">
+    <div id="members-header">
+      <h4 id="members-title">Channel members ({{ members.length }})</h4>
+      <button id="toggle-members-btn" title="Show/Hide list" (click)="toggleMembers()">{{ showMembers() ? '▾' : '▸' }}</button>
+    </div>
+    <ul id="members-list" *ngIf="showMembers()">
+      <li *ngFor="let m of members" (click)="setTracked(m)" title="Set as tracked">
+        <span class="member-dot" [class.muted]="m.mute || m.deaf"></span>
+        <span class="member-name">{{ m.name }}</span>
+        <button class="as-link" (click)="$event.stopPropagation(); setTracked(m)">Track</button>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="help-backdrop" *ngIf="showHelp()" (click)="closeHelp()"></div>
+<div class="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title" *ngIf="showHelp()">
+  <div class="help-header">
+    <h3 id="help-title">Help & Shortcuts</h3>
+    <button id="help-close-btn" class="icon-btn" title="Close" aria-label="Close" (click)="closeHelp()">✕</button>
+  </div>
+  <div class="help-content selectable">
+    <ul class="shortcut-list">
+      <li><span class="keys">Minimize</span><span class="desc">Click the — button in the titlebar</span></li>
+      <li><span class="keys">Settings</span><span class="desc">Click ⚙ to change the backend URL</span></li>
+    </ul>
+  </div>
+  <div class="help-footer">
+    <button class="primary" (click)="closeHelp()">OK</button>
+  </div>
+</div>
+
+<div class="help-backdrop" *ngIf="showSettings()" (click)="closeSettings()"></div>
+<div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" *ngIf="showSettings()">
+  <div class="help-header">
+    <h3 id="settings-title">Backend settings</h3>
+    <button class="icon-btn" title="Close" aria-label="Close" (click)="closeSettings()">✕</button>
+  </div>
+  <div class="settings-content">
+    <label for="backendUrl">Base URL (HTTP)</label>
+    <input id="backendUrl" type="text" [(ngModel)]="backendHttpBase" placeholder="http://localhost:5090" />
+    <p class="error" *ngIf="settingsError">{{ settingsError }}</p>
+    <p class="hint">WebSocket will automatically use {{ config.wsBaseUrl() }}/ws</p>
+  </div>
+  <div class="help-footer">
+    <button (click)="closeSettings()">Cancel</button>
+    <button class="primary" (click)="saveSettings()">Save</button>
+  </div>
+</div>
