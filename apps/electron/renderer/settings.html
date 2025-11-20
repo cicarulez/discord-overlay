@@ -30,7 +30,7 @@
         .text-muted { opacity: 0.75; font-size: 12px; }
     </style>
     <script defer src="settings.js"></script>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' http: https:;" />
 </head>
 <body>
 <div class="settings-window">
@@ -51,7 +51,28 @@
         </fieldset>
         <div class="form-row" id="row-backend-url">
             <label for="backendBaseUrl">Backend Base URL</label>
-            <input type="text" id="backendBaseUrl" name="backendBaseUrl" placeholder="http://localhost:5090" />
+            <input type="text" id="backendBaseUrl" name="backendBaseUrl" placeholder="http://localhost:5090/api" />
+        </div>
+
+        <!-- Client-only authentication (moved here from overlay modal) -->
+        <div id="client-auth" class="form-row" style="display:none">
+            <div id="auth-when-missing">
+                <label for="loginUser">Backend Username</label>
+                <input type="text" id="loginUser" autocomplete="username" />
+                <label for="loginPass" style="margin-top:8px">Backend Password</label>
+                <input type="password" id="loginPass" autocomplete="current-password" />
+                <div class="form-actions" style="margin-top:8px">
+                    <button id="loginBtn" type="button" class="primary">Login</button>
+                </div>
+                <p id="loginError" class="form-error" aria-live="polite"></p>
+                <p class="text-muted">The login request will be sent to <span id="loginBaseUrlHint"></span>/login</p>
+            </div>
+            <div id="auth-when-present" style="display:none">
+                <p class="text-muted">An authentication token is already saved for this backend.</p>
+                <div class="form-actions" style="margin-top:6px">
+                    <button id="logoutBtn" type="button">Logout</button>
+                </div>
+            </div>
         </div>
 
         <div class="form-row">

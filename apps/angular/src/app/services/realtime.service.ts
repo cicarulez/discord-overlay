@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, effect, EffectRef } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { ConfigService } from './config.service';
+import { AuthService } from './auth.service';
 
 export interface OverlayState {
   members: { id: string; name: string; mute?: boolean; deaf?: boolean }[];
@@ -25,13 +26,26 @@ export class RealtimeService {
   private _lastError$ = new BehaviorSubject<string>('');
   readonly lastError$: Observable<string> = this._lastError$.asObservable();
 
-  constructor(private cfg: ConfigService) {}
+  private tokenEff?: EffectRef;
+
+  constructor(private cfg: ConfigService, private auth: AuthService) {
+    // Reconnect WS when token changes
+    this.tokenEff = effect(() => {
+      // read the signal to register dependency
+      void this.auth.tokenSig();
+      this.reconnect();
+    });
+  }
 
   connect() {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
-    const wsUrl = this.cfg.wsBaseUrl() + '/ws';
+    let wsUrl = this.cfg.wsBaseUrl() + '/ws';
+    const token = this.auth.token();
+    if (token) {
+      wsUrl += `?token=${encodeURIComponent(token)}`;
+    }
     this._status$.next('connecting');
     this._lastError$.next('');
     try {

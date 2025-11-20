@@ -6,14 +6,14 @@ body {
     color: white;
 }
 
-/* Disabilita la selezione del testo in tutto l'overlay */
+/* Disable text selection across the entire overlay */
 html, body, #overlay {
     -webkit-user-select: none; /* Chrome/Electron */
-    -ms-user-select: none;      /* vecchio Edge/IE */
+    -ms-user-select: none;      /* legacy Edge/IE */
     user-select: none;
 }
 
-/* Utility: rendi selezionabile dove serve esplicitamente */
+/* Utility: make text selectable where explicitly needed */
 .selectable {
     -webkit-user-select: text !important;
     -ms-user-select: text !important;
@@ -24,7 +24,7 @@ html, body, #overlay {
     padding: 8px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.5);
-    position: relative; /* necessario per posizionare il tasto ripristina */
+    position: relative; /* required to position the restore button */
 }
 
 #titlebar {
@@ -56,7 +56,7 @@ html, body, #overlay {
     color: #ffffff;
 }
 
-/* Tasto ripristina: nascosto di default, visibile e posizionato in modalità minimizzata */
+/* Restore button: hidden by default, visible and positioned in minimized mode */
 #restore-btn {
     display: none;
     position: absolute;
@@ -103,10 +103,10 @@ html, body, #overlay {
 .status-icon {
     width: 16px;
     height: 16px;
-    aspect-ratio: 1 / 1; /* mantiene il cerchio perfetto anche sotto compressione */
+    aspect-ratio: 1 / 1; /* keeps the circle perfect even under compression */
     border-radius: 50%;
     margin-right: 8px;
-    flex: 0 0 16px; /* evita lo shrink che ovalizza il cerchio */
+    flex: 0 0 16px; /* avoids shrink that would ovalize the circle */
     box-sizing: border-box;
 }
 
@@ -151,7 +151,7 @@ html, body, #overlay {
     margin: 0;
     padding: 0;
     max-height: 320px;
-    overflow: hidden; /* verrà togglato */
+    overflow: hidden; /* will be toggled */
 }
 
 #members-list.hidden {
@@ -167,7 +167,7 @@ html, body, #overlay {
     cursor: pointer;
 }
 
-/* Punto stato membro (verde attivo / rosso muto) */
+/* Member status dot (green active / red muted) */
 .member-dot {
     width: 8px;
     height: 8px;
@@ -179,7 +179,7 @@ html, body, #overlay {
     background: #ff6666;
 }
 
-/* Pulsanti stile link (Traccia/Reset) */
+/* Link-style buttons (Track/Reset) */
 .as-link {
     margin-left: auto;
     background: transparent;
@@ -254,7 +254,7 @@ kbd {
     padding: 0 4px;
 }
 
-/* Stato minimizzato: la finestra diventa un piccolo bottone di ripristino */
+/* Minimized state: the window becomes a small restore button */
 .minimized {
     width: 32px !important;
     height: 32px !important;
@@ -272,7 +272,7 @@ kbd {
     display: block !important;
 }
 
-/* Settings form (riusato in settings.html) */
+/* Settings form (reused in settings.html) */
 .form-row {
     display: flex;
     flex-direction: column;

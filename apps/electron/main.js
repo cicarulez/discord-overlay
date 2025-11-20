@@ -24,20 +24,23 @@ function ensureDirExists(filePath) {
 
 function getDefaultSettings() {
     return {
-        // Modalità server Discord locale (default)
+        // Local Discord server mode (default)
         botToken: '',
         guildId: '',
         voiceChannelId: '',
         trackedMember: { mode: 'id', value: '' },
-        // Modalità solo client: usa un backend esterno e non avvia discord.js localmente
+        // Client-only mode: use an external backend and do not start discord.js locally
         clientOnly: false,
-        backendBaseUrl: 'http://localhost:5090'
+        // All backend endpoints (HTTP + WS) are exposed under /api
+        backendBaseUrl: 'http://localhost:5090/api',
+        // JWT auth for protected backend
+        authToken: ''
     };
 }
 
 function validateSettings(s) {
     if (!s) return { ok: false, error: 'Missing settings' };
-    // Se in modalità client-only, serve solo un URL backend valido
+    // If in client-only mode, only a valid backend URL is required
     if (s.clientOnly) {
         try {
             const u = new URL(s.backendBaseUrl);
@@ -49,7 +52,7 @@ function validateSettings(s) {
         }
         return { ok: true };
     }
-    // Altrimenti si richiedono le credenziali Discord locali
+    // Otherwise, local Discord credentials are required
     const required = ['botToken', 'guildId', 'voiceChannelId'];
     for (const k of required) {
         if (typeof s[k] !== 'string' || s[k].trim() === '') {
@@ -171,7 +174,7 @@ async function initDiscord() {
         console.log('Invalid settings. Waiting for user configuration.');
         return;
     }
-    // Se in modalità solo client, non inizializzare Discord
+    // If in client-only mode, do not initialize Discord
     if (settings.clientOnly) {
         console.log('Client-only mode: skipping local Discord client initialization.');
         return;
@@ -248,9 +251,30 @@ function updateTrackedFromMembers() {
             (m) => m.id === settings.trackedMember.value
         );
     } else if (settings.trackedMember.mode === 'name') {
-        tracked = voiceStateCache.members.find(
+        // Selezione per nome: se esiste un solo match, fissiamo stabilmente su ID per evitare ambiguità
+        const matches = voiceStateCache.members.filter(
             (m) => m.name === settings.trackedMember.value
         );
+        if (matches.length === 1) {
+            tracked = matches[0];
+            // Promuovi la preferenza da name->id per evitare flip/flop quando più utenti condividono il nome
+            try {
+                const next = {
+                    ...settings,
+                    trackedMember: { mode: 'id', value: tracked.id }
+                };
+                // Salva senza re-inizializzare il client Discord (saveSettings non riavvia nulla)
+                saveSettings(next);
+            } catch (e) {
+                // Non bloccare l'aggiornamento della UI se il salvataggio fallisce
+                console.warn('Unable to persist trackedMember promotion to id:', e && e.message ? e.message : e);
+            }
+        } else if (matches.length > 1) {
+            // Ambiguità: scegli il primo ma NON promuovere a id per non fissare arbitrariamente
+            tracked = matches[0];
+        } else {
+            tracked = null;
+        }
     }
 
     voiceStateCache.tracked = tracked || null;
@@ -402,7 +426,9 @@ function setupIpc() {
             const cleared = {
                 ...settings,
                 trackedMember: {
-                    mode: settings.trackedMember?.mode === 'name' ? 'name' : 'id',
+                    // Forza la modalità 'id' con value vuoto per evitare che un futuro
+                    // reset lasci 'name' e possa riattivare ambiguità/flip-flop
+                    mode: 'id',
                     value: ''
                 }
             };

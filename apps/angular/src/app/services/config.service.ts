@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class ConfigService {
   private readonly LS_KEY_HTTP = 'overlay.backend.httpBase';
-  private readonly DEFAULT_HTTP = 'http://localhost:5090';
+  private readonly DEFAULT_HTTP = 'http://localhost:4200/api';
   private readonly LS_KEY_TRACKED = 'overlay.client.trackedMember';
 
   // Tipi per la preferenza di tracked member lato client
@@ -43,10 +43,13 @@ export class ConfigService {
     try {
       const u = new URL(http);
       const wsProtocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
-      return `${wsProtocol}//${u.host}`;
+      // Preserve the pathname from the HTTP base (e.g., '/api') so WS is under the same prefix
+      const pathname = (u.pathname && u.pathname !== '/') ? u.pathname.replace(/\/$/, '') : '';
+      return `${wsProtocol}//${u.host}${pathname}`;
     } catch {
       // fallback
-      return 'ws://localhost:5090';
+      // Fall back to dev server proxy path
+      return 'ws://localhost:4200/api';
     }
   }
 }

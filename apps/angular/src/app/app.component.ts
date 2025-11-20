@@ -1,9 +1,10 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal, effect, EffectRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from './services/api.service';
 import { RealtimeService, ConnectionStatus } from './services/realtime.service';
 import { ConfigService } from './services/config.service';
+import { AuthService } from './services/auth.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -18,9 +19,9 @@ export class AppComponent implements OnInit, OnDestroy {
   showHelp = signal(false);
   showSettings = signal(false);
   showMembers = signal(true);
-  // members: lista mostrata in UI (eventualmente filtrata per escludere il tracked)
+  // members: list displayed in the UI (optionally filtered to exclude the tracked user)
   members: { id: string; name: string; mute?: boolean; deaf?: boolean }[] = [];
-  // membersAll: lista completa proveniente dal backend
+  // membersAll: full list coming from the backend
   private membersAll: { id: string; name: string; mute?: boolean; deaf?: boolean }[] = [];
   tracked: { id?: string; name?: string; mute?: boolean; deaf?: boolean } | null = null;
   lastUpdated: string | null = null;
@@ -29,17 +30,24 @@ export class AppComponent implements OnInit, OnDestroy {
   backendHttpBase = '';
   settingsError = '';
 
+  // Auth form
+  loginUsername = '';
+  loginPassword = '';
+  loginError = '';
+
   // Connection state
   connectionStatus: ConnectionStatus = 'connecting';
   lastErrorMsg: string = '';
   httpFailed = false;
 
   private sub?: Subscription;
+  private tokenEff?: EffectRef;
 
   constructor(
     private api: ApiService,
     private rt: RealtimeService,
-    public config: ConfigService
+    public config: ConfigService,
+    public auth: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -49,7 +57,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // Subscribe to realtime updates
     this.sub = this.rt.state$.subscribe((s) => {
       if (!s) return;
-      // Aggiorna lo stato locale dal backend (ignoriamo l'eventuale tracked lato server)
+      // Update local state from backend (ignore any server-side tracked user)
       this.membersAll = s.members || [];
       this.recomputeTrackedAndFilter();
       this.lastUpdated = s.updatedAt || null;
@@ -58,7 +66,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // Track connection status and errors
     this.rt.status$.subscribe((st) => {
       this.connectionStatus = st || 'disconnected';
-      // Se la WS è connessa, consideriamo risolto l'eventuale errore HTTP iniziale
+      // If the WS is connected, consider the initial HTTP error resolved
       if (st === 'connected') {
         this.httpFailed = false;
       }
@@ -67,28 +75,25 @@ export class AppComponent implements OnInit, OnDestroy {
       this.lastErrorMsg = msg || '';
     });
 
-    // Ensure connection
-    this.rt.connect();
-
-    // Fallback: load snapshot once at start
-    this.api.getSnapshot().subscribe({
-      next: (snap) => {
-        if (!snap?.data) return;
-        // Ignora `tracked` lato server; calcola localmente dal preferito salvato
-        this.membersAll = snap.data.members || [];
-        this.recomputeTrackedAndFilter();
-        this.lastUpdated = snap.data.updatedAt || null;
-        // Snapshot riuscito: azzera flag errore HTTP
-        this.httpFailed = false;
-      },
-      error: () => {
-        this.httpFailed = true;
+    // React to token changes: connect/disconnect
+    this.tokenEff = effect(() => {
+      const t = this.auth.tokenSig();
+      if (t) {
+        this.connectAndLoad();
+      } else {
+        this.rt.disconnect();
       }
     });
+
+    // If already authenticated, connect immediately
+    if (this.auth.isAuthenticated()) {
+      this.connectAndLoad();
+    }
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+    try { this.tokenEff?.destroy(); } catch {}
     this.rt.disconnect();
   }
 
@@ -119,7 +124,7 @@ export class AppComponent implements OnInit, OnDestroy {
       }
       this.config.setHttpBaseUrl(url);
       // Reconnect WS with new URL
-      this.httpFailed = false; // pulisci eventuale errore precedente
+      this.httpFailed = false; // clear any previous error
       this.rt.reconnect();
       this.showSettings.set(false);
     } catch (e: any) {
@@ -128,8 +133,57 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   retryConnect() {
-    this.httpFailed = false; // rimuovi banner finché riprova
+    this.httpFailed = false; // remove banner while retrying
     this.rt.reconnect();
+  }
+
+  private connectAndLoad() {
+    this.rt.connect();
+    // Fallback: load snapshot once at start
+    this.api.getSnapshot().subscribe({
+      next: (snap) => {
+        if (!snap?.data) return;
+        this.membersAll = snap.data.members || [];
+        this.recomputeTrackedAndFilter();
+        this.lastUpdated = snap.data.updatedAt || null;
+        this.httpFailed = false;
+      },
+      error: () => {
+        this.httpFailed = true;
+      }
+    });
+  }
+
+  // ---------- Auth ----------
+  doLogin() {
+    this.loginError = '';
+    const u = (this.loginUsername || '').trim();
+    const p = this.loginPassword || '';
+    if (!u || !p) {
+      this.loginError = 'Enter username and password';
+      return;
+    }
+    this.api.loginBasic(u, p).subscribe({
+      next: (res) => {
+        if (res?.ok && res.token) {
+          this.auth.setToken(res.token);
+          this.loginPassword = '';
+          // connectAndLoad will be called by the token listener
+        } else {
+          this.loginError = 'Invalid credentials';
+        }
+      },
+      error: () => {
+        this.loginError = 'Login failed';
+        }
+      });
+    }
+
+  logout() {
+    this.auth.logout();
+    this.members = [];
+    this.tracked = null;
+    this.lastUpdated = null;
   }
 
   // ---------- Client-side tracked selection ----------

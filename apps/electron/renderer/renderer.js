@@ -1,12 +1,14 @@
 let membersCollapsed = false;
 let isMinimized = false;
 
-// Stato sorgente dati client-only
+// Client-only data source state
 let clientOnlyActive = false;
-let clientSettings = null; // ultima copia di settings
+// Version token to invalidate async callbacks (HTTP/WS) from previous sessions
+let clientOnlyVersion = 0;
+let clientSettings = null; // last copy of settings
 let ws = null;
 let wsReconnectTimer = null;
-// Finestra temporale per sopprimere click sulla lista subito dopo un reset
+// Time window to suppress clicks on the list right after a reset
 let suppressMemberClickUntil = 0;
 
 function render(data) {
@@ -89,6 +91,8 @@ function render(data) {
 // ---------------- Client-only datasource -----------------
 function selectTracked(members, trackedMember) {
     if (!trackedMember) return null;
+    // Empty value means: no tracked
+    if (!trackedMember.value) return null;
     if (trackedMember.mode === 'id') {
         return members.find((m) => m.id === trackedMember.value) || null;
     }
@@ -104,13 +108,47 @@ function normalizeStateFromBackend(payload, trackedMember) {
         name: m.name,
         muted: Boolean(m.mute || m.deaf)
     }));
-    const tracked = selectTracked(members, trackedMember);
+
+    // Se trackedMember è assente o ha value vuoto, nessun tracked
+    if (!trackedMember || !trackedMember.value) {
+        return { members, tracked: null };
+    }
+
+    // Stabilizzazione: se il tracked è espresso per nome e c'è un solo match,
+    // promuoviamo immediatamente a ID per evitare flip/flop.
+    let tracked = null;
+    if (trackedMember && trackedMember.mode === 'name') {
+        const matches = members.filter((m) => m.name === trackedMember.value);
+        if (matches.length === 1) {
+            tracked = matches[0];
+            // Promuovi async senza bloccare il rendering
+            try {
+                // Evita di spammare: promuovi solo se non è già ID
+                window.settingsApi.setTracked({ mode: 'id', value: tracked.id });
+            } catch (_) { /* noop */ }
+        } else if (matches.length > 1) {
+            // Ambiguità: mostra il primo ma non promuovere
+            tracked = matches[0];
+        } else {
+            tracked = null;
+        }
+    } else {
+        // Modalità ID o non impostato: selezione diretta
+        tracked = selectTracked(members, trackedMember);
+    }
     return { members, tracked };
 }
 
 async function httpGetSnapshot(baseUrl, trackedMember) {
     try {
-        const res = await fetch(new URL('/snapshot', baseUrl).toString(), { cache: 'no-store' });
+        const headers = {};
+        if (clientSettings && clientSettings.authToken) {
+            headers['Authorization'] = `Bearer ${clientSettings.authToken}`;
+        }
+        // Preserve pathname of baseUrl (e.g., '/api') by using a relative URL with './'
+        // Note: new URL('snapshot', baseUrl) would drop the last segment (e.g., '/api' -> '/snapshot').
+        // Using './snapshot' ensures we append to the existing pathname, resulting in '/api/snapshot'.
+        const res = await fetch(new URL('./snapshot', baseUrl).toString(), { cache: 'no-store', headers });
         const json = await res.json();
         if (json && json.ok && json.data) {
             return normalizeStateFromBackend(json.data, trackedMember);
@@ -131,17 +169,31 @@ function startClientOnly(baseUrl, settings) {
     }
 
     clientOnlyActive = true;
+    // Invalida qualsiasi callback precedente e cattura la versione corrente
+    const myVersion = ++clientOnlyVersion;
     clientSettings = settings;
 
     // Primo snapshot via HTTP (best-effort)
-    httpGetSnapshot(baseUrl, settings.trackedMember).then((state) => render(state));
+    httpGetSnapshot(baseUrl, settings.trackedMember).then((state) => {
+        if (myVersion === clientOnlyVersion && clientOnlyActive) {
+            render(state);
+        }
+    });
+
+    // Se manca authToken, apri la finestra Settings per effettuare il login inline
+    if (!settings.authToken) {
+        try { window.appApi && window.appApi.openSettings && window.appApi.openSettings(); } catch (_) { /* noop */ }
+        return; // attendi che l'utente esegua il login dalle Settings
+    }
 
     // Costruisci URL WS
     let wsUrl;
     try {
         const u = new URL(baseUrl);
         const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
-        wsUrl = `${proto}//${u.host}/ws`;
+        const token = encodeURIComponent(settings.authToken || '');
+        const path = (u.pathname && u.pathname !== '/') ? u.pathname.replace(/\/$/, '') : '';
+        wsUrl = `${proto}//${u.host}${path}/ws?token=${token}`;
     } catch (_) {
         return; // URL non valido
     }
@@ -151,7 +203,10 @@ function startClientOnly(baseUrl, settings) {
         if (wsReconnectTimer) return;
         wsReconnectTimer = setTimeout(() => {
             wsReconnectTimer = null;
-            startClientOnly(baseUrl, settings);
+            // Solo se questa sessione è ancora la corrente
+            if (myVersion === clientOnlyVersion && clientOnlyActive) {
+                startClientOnly(baseUrl, settings);
+            }
         }, 2000);
     }
 
@@ -164,9 +219,13 @@ function startClientOnly(baseUrl, settings) {
         try {
             const msg = JSON.parse(ev.data);
             if (msg.type === 'snapshot') {
-                render(normalizeStateFromBackend(msg.payload, settings.trackedMember));
+                if (myVersion === clientOnlyVersion && clientOnlyActive) {
+                    render(normalizeStateFromBackend(msg.payload, settings.trackedMember));
+                }
             } else if (msg.type === 'voice_state_update') {
-                render(normalizeStateFromBackend(msg.payload, settings.trackedMember));
+                if (myVersion === clientOnlyVersion && clientOnlyActive) {
+                    render(normalizeStateFromBackend(msg.payload, settings.trackedMember));
+                }
             }
         } catch (_) { /* ignore */ }
     });
@@ -186,16 +245,105 @@ function stopClientOnly() {
     }
 }
 
+// ---------------- Login modal (client-only) -----------------
+function showLoginModal(baseUrl, settings) {
+    const backdropId = 'login-backdrop';
+    const modalId = 'login-modal';
+
+    let backdrop = document.getElementById(backdropId);
+    let modal = document.getElementById(modalId);
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = backdropId;
+        backdrop.className = 'help-backdrop';
+        document.body.appendChild(backdrop);
+    }
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'help-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.innerHTML = `
+          <div class="help-header">
+            <h3 id="login-title">Login</h3>
+          </div>
+          <div class="help-content">
+            <label for="loginUser">Username</label>
+            <input id="loginUser" type="text" autocomplete="username" />
+            <label for="loginPass" style="margin-top:8px">Password</label>
+            <input id="loginPass" type="password" autocomplete="current-password" />
+            <p id="loginError" class="error" style="margin-top:8px;display:none"></p>
+            <p class="hint" style="margin-top:8px">Backend: ${baseUrl}</p>
+          </div>
+          <div class="help-footer">
+            <button id="loginCancel">Cancel</button>
+            <button id="loginOk" class="primary">Login</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    backdrop.hidden = false;
+    modal.hidden = false;
+
+    const userEl = modal.querySelector('#loginUser');
+    const passEl = modal.querySelector('#loginPass');
+    const errEl = modal.querySelector('#loginError');
+    const okBtn = modal.querySelector('#loginOk');
+    const cancelBtn = modal.querySelector('#loginCancel');
+
+    function setError(msg) {
+        errEl.textContent = msg || '';
+        errEl.style.display = msg ? 'block' : 'none';
+    }
+
+    async function doLogin() {
+        setError('');
+        const username = (userEl.value || '').trim();
+        const password = passEl.value || '';
+        if (!username || !password) {
+            return setError('Enter username and password');
+        }
+        try {
+            const basic = btoa(`${username}:${password}`);
+            // Use './login' to keep '/api' prefix from baseUrl
+            const res = await fetch(new URL('./login', baseUrl).toString(), {
+                method: 'POST',
+                headers: { 'Authorization': `Basic ${basic}` }
+            });
+            const json = await res.json();
+            if (json && json.ok && json.token) {
+                const newSettings = { ...settings, authToken: json.token };
+                await window.settingsApi.save(newSettings);
+                backdrop.hidden = true;
+                modal.hidden = true;
+                // riparti in client-only con token aggiornato
+                startClientOnly(newSettings.backendBaseUrl, newSettings);
+            } else {
+                setError('Invalid credentials');
+            }
+        } catch (e) {
+            setError('Login failed');
+        }
+    }
+
+    okBtn.addEventListener('click', doLogin, { once: true });
+    cancelBtn.addEventListener('click', () => {
+        backdrop.hidden = true;
+        modal.hidden = true;
+    }, { once: true });
+}
+
 // ---------------- Init -----------------
 window.addEventListener('DOMContentLoaded', async () => {
-    // Carica settings per capire quale sorgente usare
+    // Load settings to determine which data source to use
     const s = await window.settingsApi.get();
     clientSettings = s;
 
     if (s && s.clientOnly) {
         startClientOnly(s.backendBaseUrl, s);
     } else {
-        // Modalità Discord locale: usa IPC voiceApi
+        // Local Discord mode: use IPC voiceApi
         const data = await window.voiceApi.getCurrent();
         render(data);
         window.voiceApi.onUpdate((data) => render(data));
@@ -228,7 +376,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         setMinimized(!isMinimized);
     });
 
-    // In modalità minimizzata, mostra il tasto ripristina e consenti il ripristino con un click
+    // In minimized mode, show the restore button and allow restoring with one click
     restoreBtn.addEventListener('click', () => {
         setMinimized(false);
     });
@@ -299,48 +447,32 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Reset tracked handler
     const resetTrackedBtn = document.getElementById('reset-tracked-btn');
     if (resetTrackedBtn) {
-        // Imposta la soppressione già su pointerdown, così il mouseup/click non cadrà su un membro apparso sotto il puntatore
-        const armSuppression = (e) => {
-            // Allunga la finestra per coprire eventuali ritardi di re-render
+        // Arm suppression to avoid accidental reselection from the members list right after reset
+        const armSuppression = () => {
+            // Extend the window to cover potential re-render delays
             suppressMemberClickUntil = Date.now() + 800;
 
-            // Disabilita temporaneamente gli eventi di puntatore sulla lista membri
+            // Temporarily disable pointer events on the members list
             const membersList = document.getElementById('members-list');
             if (membersList) {
                 membersList.style.pointerEvents = 'none';
                 setTimeout(() => {
-                    // ripristina
+                    // restore
                     if (membersList) membersList.style.pointerEvents = '';
                 }, 900);
             }
+        };
 
-            // Swallow del prossimo click/pointerup a livello di documento in cattura
-            const swallowClick = (evt) => {
-                evt.stopPropagation();
-                evt.preventDefault();
-                document.removeEventListener('click', swallowClick, true);
-            };
-            document.addEventListener('click', swallowClick, true);
-
-            const swallowPU = (evt) => {
-                evt.stopPropagation();
-                evt.preventDefault();
-                document.removeEventListener('pointerup', swallowPU, true);
-            };
-            document.addEventListener('pointerup', swallowPU, true);
-
+        // Do NOT swallow the same click that triggers the reset; just arm suppression
+        resetTrackedBtn.addEventListener('click', (e) => {
+            armSuppression();
             e.stopPropagation();
             e.preventDefault();
-        };
-        resetTrackedBtn.addEventListener('pointerdown', armSuppression);
-        resetTrackedBtn.addEventListener('mousedown', armSuppression);
-        resetTrackedBtn.addEventListener('click', (e) => {
-            armSuppression(e);
             window.settingsApi.clearTracked();
         });
     }
 
-    // Ascolta cambi impostazioni per switchare modalità a caldo
+    // Listen to settings changes to hot-switch mode
     window.appApi.onSettingsUpdated((newSettings) => {
         clientSettings = newSettings;
         if (newSettings.clientOnly) {
@@ -348,10 +480,10 @@ window.addEventListener('DOMContentLoaded', async () => {
             startClientOnly(newSettings.backendBaseUrl, newSettings);
         } else {
             stopClientOnly();
-            // Torna a IPC: chiedi snapshot e attendi update
+            // Back to IPC: request snapshot and wait for updates
             window.voiceApi.getCurrent().then((data) => render(data));
-            // Nota: onUpdate era già registrato nella prima init se eravamo in modalità Discord.
-            // Per sicurezza aggiungiamo un listener se non attivo:
+            // Note: onUpdate was already registered in the first init if we were in Discord mode.
+            // For safety, add a listener if not active:
             window.voiceApi.onUpdate((data) => render(data));
         }
     });

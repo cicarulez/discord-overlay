@@ -1,9 +1,30 @@
-<div id="overlay" [class.minimized]="minimized()">
+<!-- Login screen when not authenticated -->
+<div *ngIf="!auth.isAuthenticated()" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
+  <div class="help-header">
+    <h3 id="login-title">Login</h3>
+  </div>
+  <div class="settings-content">
+    <label for="loginUser">Username</label>
+    <input id="loginUser" type="text" [(ngModel)]="loginUsername" autocomplete="username" />
+    <label for="loginPass">Password</label>
+    <input id="loginPass" type="password" [(ngModel)]="loginPassword" autocomplete="current-password" />
+    <p class="error" *ngIf="loginError">{{ loginError }}</p>
+  </div>
+  <div class="help-footer">
+    <button class="primary" (click)="doLogin()">Login</button>
+  </div>
+  <div class="settings-content" style="margin-top:8px">
+    <p class="hint">Backend: {{ config.httpBaseUrl() }}</p>
+  </div>
+</div>
+
+<div *ngIf="auth.isAuthenticated()" id="overlay" [class.minimized]="minimized()">
   <button id="restore-btn" class="icon-btn" title="Restore" *ngIf="minimized()" (click)="toggleMinimize()">◻</button>
   <div id="titlebar">
     <span id="title-text">Voice Overlay (Web)</span>
     <div id="title-actions">
       <button id="help-btn" class="icon-btn" title="Help" (click)="openHelp()">?</button>
+      <button id="logout-btn" class="icon-btn" title="Logout" (click)="logout()">⎋</button>
       <button id="settings-btn" class="icon-btn" title="Settings" (click)="openSettings()">⚙</button>
       <button id="minimize-btn" class="icon-btn" title="Minimize/Restore" (click)="toggleMinimize()">—</button>
     </div>
