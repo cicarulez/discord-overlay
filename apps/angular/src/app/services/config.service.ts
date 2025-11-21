@@ -1,17 +1,16 @@
 import { Injectable } from '@angular/core';
 
-// Gestisce la configurazione di collegamento al backend esterno.
-// Default: http://localhost:5090
+// Manages configuration for connecting to the external backend
 @Injectable({ providedIn: 'root' })
 export class ConfigService {
   private readonly LS_KEY_HTTP = 'overlay.backend.httpBase';
   private readonly DEFAULT_HTTP = 'http://localhost:4200/api';
   private readonly LS_KEY_TRACKED = 'overlay.client.trackedMember';
 
-  // Tipi per la preferenza di tracked member lato client
+  // Client-side tracked member preference type
   // mode: 'id' | 'name'
-  // value: valore corrispondente (id utente o nome visualizzato)
-  // Manteniamo volutamente semplice e locale per dispositivo.
+  // value: corresponding value (user id or display name)
+  // Intentionally simple and local per device
   getTrackedPref(): { mode: 'id' | 'name'; value: string } | null {
     try {
       const raw = localStorage.getItem(this.LS_KEY_TRACKED);

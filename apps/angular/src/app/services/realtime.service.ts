@@ -29,15 +29,23 @@ export class RealtimeService {
   private tokenEff?: EffectRef;
 
   constructor(private cfg: ConfigService, private auth: AuthService) {
-    // Reconnect WS when token changes
+    // Automatically manage connection based on token presence
     this.tokenEff = effect(() => {
-      // read the signal to register dependency
-      void this.auth.tokenSig();
-      this.reconnect();
+      const t = this.auth.tokenSig();
+      if (t) {
+        this.reconnect();
+      } else {
+        this.disconnect();
+      }
     });
   }
 
   connect() {
+    // Do not connect when unauthenticated
+    if (!this.auth.isAuthenticated()) {
+      this._status$.next('disconnected');
+      return;
+    }
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -73,8 +81,13 @@ export class RealtimeService {
       }
     };
 
-    this.ws.onclose = () => {
+    this.ws.onclose = (ev) => {
       this._status$.next('disconnected');
+      // Do not attempt reconnection if unauthenticated or if the close reason indicates auth/policy issues
+      const unauthorizedCloseCodes = new Set([4401, 4001, 1008]); // 1008 = policy violation
+      if (!this.auth.isAuthenticated() || unauthorizedCloseCodes.has(ev.code)) {
+        return;
+      }
       this.scheduleReconnect();
     };
 
