@@ -226,6 +226,20 @@ html, body, #overlay {
 .help-content {
     padding: 10px;
     font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.help-content > label {
+    display: block;
+}
+
+.help-content > input,
+.help-content > select,
+.help-content > p {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .shortcut-list {
@@ -284,6 +298,17 @@ kbd {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+}
+
+/* Settings window: forza Username/Password del backend su righe separate e a larghezza piena */
+#client-auth label {
+    display: block;
+}
+
+#client-auth input,
+#client-auth p {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 label {

@@ -188,7 +188,25 @@
 }
 
 .help-content, .settings-content {
-  padding: 12px
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.help-content > label,
+.settings-content > label {
+  display: block;
+}
+
+.help-content > input,
+.settings-content > input,
+.settings-content > select,
+.help-content > select,
+.help-content > p,
+.settings-content > p {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .help-footer {
